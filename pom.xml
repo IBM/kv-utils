@@ -18,7 +18,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.ibm.utils</groupId>
   <artifactId>kv-utils</artifactId>
-  <version>0.5.0</version>
+  <version>0.5.1-SNAPSHOT</version>
   <name>kv-utils</name>
   <description>Abstracted helper classes providing consistent key-value store functionality, with zookeeper and etcd3 implementations.</description>
   <url>https://github.com/IBM/kv-utils</url>

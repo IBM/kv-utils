@@ -23,6 +23,7 @@ import java.io.IOException;
  */
 public interface LeaderElection extends Closeable {
 
+    @FunctionalInterface
     interface ElectionListener {
         /**
          * Called if our leadership status changes

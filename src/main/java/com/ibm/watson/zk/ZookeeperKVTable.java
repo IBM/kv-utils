@@ -112,7 +112,7 @@ public class ZookeeperKVTable extends AbstractKVTable { //, Iterable<String> {
             numBuckets = getNumBuckets();
             if (numBuckets >= 2) {
                 final int numDigits = Math.max(2, (int) (Math.log10(numBuckets) + 1));
-                String buckFormat = String.format("bucket-%%0%dd-of-%0" + numDigits + "d", numDigits, numBuckets);
+                String buckFormat = String.format("bucket-%%0%dd-of-%0" + numDigits + 'd', numDigits, numBuckets);
 
                 bucketPaths = new String[numBuckets];
                 for (int i = 0; i < numBuckets; i++) {
@@ -122,7 +122,7 @@ public class ZookeeperKVTable extends AbstractKVTable { //, Iterable<String> {
                 BUC_FILTER = FILTER_BUCKETS? new Predicate<ChildData>() {
                     private final int bucstart = tablePath.length() + "/bucket-".length() + numDigits;
                     private final int bucend = bucstart + "-of-".length() + numDigits;
-                    private final String SUFF = String.format("-of-%0" + numDigits + "d", numBuckets);
+                    private final String SUFF = String.format("-of-%0" + numDigits + 'd', numBuckets);
 
                     @Override
                     public boolean apply(ChildData input) {
@@ -596,7 +596,7 @@ public class ZookeeperKVTable extends AbstractKVTable { //, Iterable<String> {
     }
 
     static String node(String path) {
-        int s = path.lastIndexOf("/");
+        int s = path.lastIndexOf('/');
         return s < 0? path : path.substring(s + 1);
     }
 

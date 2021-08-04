@@ -45,7 +45,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * The original version of this class lived in litelinks
  */
-public class ZookeeperClient {
+public final class ZookeeperClient {
 
     private static final Logger logger = LoggerFactory.getLogger(ZookeeperClient.class);
 

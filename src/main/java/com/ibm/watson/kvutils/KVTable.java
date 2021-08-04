@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.IntPredicate;
 
 /**
@@ -118,6 +117,7 @@ public interface KVTable extends Closeable {
      *
      * @param <T>
      */
+    @FunctionalInterface
     interface Listener<T extends KVRecord> {
         void event(EventType type, String key, T record);
     }

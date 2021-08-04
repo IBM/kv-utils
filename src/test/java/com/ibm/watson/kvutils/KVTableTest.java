@@ -28,7 +28,7 @@ import static org.junit.Assert.*;
 
 public abstract class KVTableTest {
 
-    public class StringRecord extends KVRecord {
+    public static class StringRecord extends KVRecord {
         public String str;
 
         public StringRecord(String str) {

@@ -28,6 +28,7 @@ import java.util.Set;
  */
 public interface DynamicConfig extends Map<String, String>, AutoCloseable {
 
+    @FunctionalInterface
     interface Listener {
         /**
          * @param key

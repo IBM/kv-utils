@@ -29,7 +29,7 @@ import java.util.TreeMap;
  * suppressed.
  * <p>
  * This is particularly useful/important to support integrity of
- * of model changes during upgrades - old instances won't wipe out
+ * model changes during upgrades - old instances won't wipe out
  * new properties added by newer instances when they update records.
  */
 public abstract class JsonExtensible {

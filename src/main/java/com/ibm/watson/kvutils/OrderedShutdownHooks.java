@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class OrderedShutdownHooks {
+public final class OrderedShutdownHooks {
 
     private static final Logger logger = LoggerFactory.getLogger(OrderedShutdownHooks.class);
 
@@ -32,7 +32,7 @@ public class OrderedShutdownHooks {
         final Runnable hook;
         final int priority;
 
-        public Hook(Runnable hook, int priority) {
+        Hook(Runnable hook, int priority) {
             this.hook = hook;
             this.priority = priority;
         }

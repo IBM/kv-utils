@@ -32,7 +32,7 @@ public abstract class AbstractDistributor implements Distributor {
     // does not include us
     protected volatile Participant[] participants = EMPTY_ARR;
 
-    public AbstractDistributor(String participantId) {
+    protected AbstractDistributor(String participantId) {
         if (participantId != null && participantId.contains("\\n")) {
             throw new IllegalArgumentException("id can't contain linebreak");
         }

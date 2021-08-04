@@ -115,7 +115,7 @@ public abstract class AbstractKVTable implements KVTable {
                     };
                 }
             };
-            this.noThrowIterable = insulatedIterable(this::iterator);
+            this.noThrowIterable = insulatedIterable(this);
             this.strongNoThrowIterable = insulatedIterable(this::strongIterator);
         }
 

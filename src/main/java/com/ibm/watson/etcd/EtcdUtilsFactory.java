@@ -154,7 +154,7 @@ public class EtcdUtilsFactory extends KVUtilsFactory {
             path += "/";
         }
         ByteString bs = ByteString.copyFromUtf8(path);
-        return rootPrefix != null? rootPrefix.concat(bs) : bs;
+        return rootPrefix != null ? rootPrefix.concat(bs) : bs;
     }
 
     @Override
@@ -162,12 +162,11 @@ public class EtcdUtilsFactory extends KVUtilsFactory {
         return ETCD_TYPE;
     }
 
-    private static final ByteString TEST_KEY =
-            ByteString.copyFromUtf8("__DUMMY_KEY_FOR_TESTING_CONNECTION");
+    private static final String TEST_PATH = "/__DUMMY_KEY_FOR_TESTING_CONNECTION";
 
     @Override
     public ListenableFuture<Boolean> verifyKvStoreConnection() {
-        return Futures.catching(Futures.transform(client.getKvClient().get(TEST_KEY).countOnly()
+        return Futures.catching(Futures.transform(client.getKvClient().get(pathToKey(TEST_PATH, false)).countOnly()
                         .serializable(true).async(), rr -> Boolean.TRUE, MoreExecutors.directExecutor()),
                 Exception.class, e -> { // Intentionally not catching Errors
                     throw new RuntimeException("etcd connection verification failed", e);
@@ -209,7 +208,7 @@ public class EtcdUtilsFactory extends KVUtilsFactory {
             return newValue;
         }
         RangeResponse rr = resp.getResponses(0).getResponseRange();
-        return rr.getKvsCount() == 0? null : rr.getKvs(0).getValue().toByteArray();
+        return rr.getKvsCount() == 0 ? null : rr.getKvs(0).getValue().toByteArray();
     }
 
     public EtcdClient getClient() {

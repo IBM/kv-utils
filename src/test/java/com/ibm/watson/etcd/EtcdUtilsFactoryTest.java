@@ -15,12 +15,26 @@
  */
 package com.ibm.watson.etcd;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.ByteString;
+import com.ibm.etcd.api.*;
 import com.ibm.etcd.client.EtcdClient;
+import com.ibm.etcd.client.KeyUtils;
 import com.ibm.watson.kvutils.KVUtilsFactoryTest;
 import com.ibm.watson.kvutils.factory.KVUtilsFactory;
+import io.grpc.CallCredentials;
+import io.grpc.ManagedChannel;
+import io.grpc.Metadata;
+import io.grpc.Status;
+import io.grpc.netty.NettyChannelBuilder;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
+import org.junit.Test;
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.*;
 
 @Ignore // etcd server not currently set up in CI
 public class EtcdUtilsFactoryTest extends KVUtilsFactoryTest {
@@ -44,5 +58,69 @@ public class EtcdUtilsFactoryTest extends KVUtilsFactoryTest {
     @Override
     public KVUtilsFactory getDisconnectedFactory() throws Exception {
         return new EtcdUtilsFactory("localhost:1234"); // nothing listening on this port
+    }
+
+    @Test
+    public void testFactoryWithAuth() throws Exception {
+        // etcd-java client doesn't support auth APIs natively - use gRPC API directly
+        final ManagedChannel channel = NettyChannelBuilder.forTarget("localhost:2379")
+                .usePlaintext().build();
+        final AuthGrpc.AuthBlockingStub authClient = AuthGrpc.newBlockingStub(channel);
+        // root user must be created
+        authClient.userAdd(AuthUserAddRequest.newBuilder().setName("root").setPassword("root").build());
+        authClient.userGrantRole(AuthUserGrantRoleRequest.newBuilder().setUser("root").setRole("root").build());
+        // create user
+        authClient.userAdd(AuthUserAddRequest.newBuilder().setName("user1").setPassword("password1").build());
+        // create role
+        authClient.roleAdd(AuthRoleAddRequest.newBuilder().setName("role1").build());
+        // grant access permissions for prefix "user1chroot/" to role
+        ByteString chrootPrefix = ByteString.copyFromUtf8("user1chroot/");
+        authClient.roleGrantPermission(AuthRoleGrantPermissionRequest.newBuilder().setName("role1").setPerm(
+                Permission.newBuilder().setPermType(Permission.Type.READWRITE)
+                        .setKey(chrootPrefix).setRangeEnd(KeyUtils.plusOne(chrootPrefix))
+                        .build()).build());
+        // assign role to user
+        authClient.userGrantRole(AuthUserGrantRoleRequest.newBuilder().setUser("user1").setRole("role1").build());
+        // enable auth
+        authClient.authEnable(AuthEnableRequest.getDefaultInstance());
+        try (EtcdClient client = EtcdClient.forEndpoint("localhost", 2379)
+                .withCredentials("user1", "password1")
+                .withPlainText().build()) {
+
+            // user1 attempt to access outside chroot should fail
+            KVUtilsFactory rootFactory = new EtcdUtilsFactory(client, null);
+            ListenableFuture<Boolean> connCheck = rootFactory.verifyKvStoreConnection();
+            try {
+                connCheck.get(2, TimeUnit.SECONDS);
+                fail("unauthorized access succeeded");
+            } catch (Exception e) {
+                assertEquals(Status.Code.PERMISSION_DENIED, Status.fromThrowable(e).getCode());
+            }
+
+            // user1 attempt to access inside chroot should succeed
+            KVUtilsFactory userFactory = new EtcdUtilsFactory(client, chrootPrefix);
+            assertTrue(userFactory.verifyKvStoreConnection().get(2, TimeUnit.SECONDS));
+        } finally {
+            // always disable auth - but must be root
+            final AuthenticateResponse ar = authClient.authenticate(AuthenticateRequest.newBuilder()
+                    .setName("root").setPassword("root").build());
+            AuthGrpc.AuthBlockingStub rootClient = authClient.withCallCredentials(new CallCredentials() {
+                @Override
+                public void applyRequestMetadata(RequestInfo requestInfo, Executor executor,
+                                                 MetadataApplier metadataApplier) {
+                    Metadata header = new Metadata();
+                    header.put(Metadata.Key.of("token", Metadata.ASCII_STRING_MARSHALLER), ar.getToken());
+                    metadataApplier.apply(header);
+                }
+                @Override
+                public void thisUsesUnstableApi() {}
+            });
+            // clean up users/roles
+            rootClient.userDelete(AuthUserDeleteRequest.newBuilder().setName("user1").build());
+            rootClient.roleDelete(AuthRoleDeleteRequest.newBuilder().setRole("role1").build());
+            rootClient.authDisable(AuthDisableRequest.getDefaultInstance());
+            // finally delete root user
+            authClient.userDelete(AuthUserDeleteRequest.newBuilder().setName("root").build());
+        }
     }
 }
